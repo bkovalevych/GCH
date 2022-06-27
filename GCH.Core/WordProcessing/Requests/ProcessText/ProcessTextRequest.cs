@@ -1,14 +1,12 @@
 ﻿using LanguageExt.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MediatR;
 
 namespace GCH.Core.WordProcessing.Requests.ProcessText
 {
     public class ProcessTextRequest : IRequest<Result<string>>
     {
+        public string Language { get; set; }
 
+        public string Text { get; set; }
     }
 }

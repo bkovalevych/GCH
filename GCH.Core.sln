@@ -5,6 +5,10 @@ VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GCH.Core", "GCH.Core\GCH.Core.csproj", "{B8F19D9C-458B-40D5-8E81-FD4525E2BE85}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GCH.Resources", "GCH.Resources\GCH.Resources.csproj", "{E70268C1-9164-4534-AA4A-47CBB3271EEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GCH.TelegramTriggerFunction", "GCH.TelegramTriggerFunction\GCH.TelegramTriggerFunction.csproj", "{44DFF9AF-50F1-4F7B-B2B9-C97F5AA8EF95}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{B8F19D9C-458B-40D5-8E81-FD4525E2BE85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8F19D9C-458B-40D5-8E81-FD4525E2BE85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8F19D9C-458B-40D5-8E81-FD4525E2BE85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E70268C1-9164-4534-AA4A-47CBB3271EEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E70268C1-9164-4534-AA4A-47CBB3271EEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E70268C1-9164-4534-AA4A-47CBB3271EEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E70268C1-9164-4534-AA4A-47CBB3271EEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44DFF9AF-50F1-4F7B-B2B9-C97F5AA8EF95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44DFF9AF-50F1-4F7B-B2B9-C97F5AA8EF95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44DFF9AF-50F1-4F7B-B2B9-C97F5AA8EF95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44DFF9AF-50F1-4F7B-B2B9-C97F5AA8EF95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
