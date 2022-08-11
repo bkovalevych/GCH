@@ -1,4 +1,5 @@
-﻿using GCH.Core.TelegramLogic.Handlers.Basic;
+﻿using GCH.Core.Interfaces.Tables;
+using GCH.Core.TelegramLogic.Handlers.Basic;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
 using Telegram.Bot;
@@ -9,28 +10,31 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
 {
     public class GoToLanguge : AbstractTelegramHandler
     {
-        public GoToLanguge(IWrappedTelegramClient client) : base(client)
+        private readonly IUserSettingsTable _settingsTable;
+
+        public GoToLanguge(IWrappedTelegramClient client, IUserSettingsTable settingsTable) : base(client)
         {
+            _settingsTable = settingsTable;
         }
 
         public override async Task HandleThen(TelegramUpdateNotification notification, 
             CancellationToken cancellationToken)
         {
             var upd = notification.Update;
-
+            var settings = await _settingsTable.GetByChatId(upd.CallbackQuery.Message.Chat.Id);
             var markup = new InlineKeyboardMarkup(new InlineKeyboardButton[][] 
             {
                 new InlineKeyboardButton[]
                 {
-                    new InlineKeyboardButton("En")
+                    new InlineKeyboardButton("en" == settings.Language? "en (selected)": "en")
                     {
                         CallbackData = Constants.SettingsButtons.LanguageEn
                     },
-                    new InlineKeyboardButton("Ua")
+                    new InlineKeyboardButton("ua" == settings.Language? "ua (selected)": "ua")
                     {
                         CallbackData = Constants.SettingsButtons.LanguageUa
                     },
-                    new InlineKeyboardButton("Ru")
+                    new InlineKeyboardButton("ru" == settings.Language? "ru (selected)": "ru")
                     {
                         CallbackData = Constants.SettingsButtons.LanguageRu
                     }

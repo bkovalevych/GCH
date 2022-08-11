@@ -5,19 +5,25 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using GCH.Core.Interfaces.Tables;
 
 namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
 {
     public class GoToSettings : AbstractTelegramHandler
     {
-        public GoToSettings(IWrappedTelegramClient client) : base(client)
+        private readonly IUserSettingsTable _userSettingstable;
+
+        public GoToSettings(IWrappedTelegramClient client, 
+            IUserSettingsTable userSettingsTable) : base(client)
         {
+            _userSettingstable = userSettingsTable;
         }
 
         public override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             var upd = notification.Update;
-            var languageBtn = new InlineKeyboardButton("Language") 
+            var settings = await _userSettingstable.GetByChatId(upd.Message.Chat.Id);
+            var languageBtn = new InlineKeyboardButton($"Language: {settings.Language}") 
             { 
                 CallbackData = Constants.SettingsButtons.Language
             };

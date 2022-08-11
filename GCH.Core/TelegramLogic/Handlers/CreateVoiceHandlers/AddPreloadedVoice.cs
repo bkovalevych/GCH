@@ -1,23 +1,24 @@
 ﻿using Azure.Storage.Queues;
+using GCH.Core.Interfaces.Tables;
 using GCH.Core.Models;
 using GCH.Core.TelegramLogic.Handlers.Basic;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
 using Newtonsoft.Json;
 using System.Text;
-using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
 {
     public class AddPreloadedVoice : AbstractTelegramHandler
     {
+        private readonly IUserSettingsTable _settingsTable;
         private readonly QueueClient _queueClient;
 
-        public AddPreloadedVoice(IWrappedTelegramClient client, QueueClient queueClient) : base(client)
+        public AddPreloadedVoice(IWrappedTelegramClient client, QueueClient queueClient,
+            IUserSettingsTable settingsTable) : base(client)
         {
+            _settingsTable = settingsTable;
             _queueClient = queueClient;
         }
 
@@ -25,10 +26,14 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
         {
             var upd = notification.Update;
             var fileName = ChatVoiceHelpers.GetFileName(upd.CallbackQuery.Message.ReplyMarkup.InlineKeyboard);
+            var settings = await _settingsTable.GetByChatId(upd.CallbackQuery.Message.Chat.Id);
             if (string.IsNullOrEmpty(fileName))
             {
                 fileName = Guid.NewGuid().ToString();
+                settings.LastVoiceId = fileName;
+                await _settingsTable.SetSettings(settings);
             }
+
             var msg = new QueueMessageToAddVoice()
             {
                 ChatId = upd.CallbackQuery.Message.Chat.Id,
@@ -40,7 +45,7 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
                 Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(msg))), cancellationToken);
         }
 
-        
+
 
         public override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {

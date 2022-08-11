@@ -17,6 +17,15 @@
     <ProjectReference Include="..\GCH.Infrastructure\GCH.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="ffmpegLibs\ffmpeg.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ffmpegLibs\ffplay.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ffmpegLibs\ffprobe.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -3,7 +3,7 @@
     public static class Constants
     {
         public const int DefaultPageSize = 10;
-
+        public static TimeSpan MaxDuration { get => TimeSpan.FromMinutes(2); }
         public static class SettingsButtons
         {
             public const string Settings = "settings";
@@ -12,7 +12,7 @@
 
             public const string LanguageEn = "language/en";
 
-            public const string LanguageUa = "language/au";
+            public const string LanguageUa = "language/ua";
 
             public const string LanguageRu = "language/ru";
         }

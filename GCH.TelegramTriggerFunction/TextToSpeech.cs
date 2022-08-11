@@ -45,56 +45,23 @@ namespace GCH.TelegramTriggerFunction
             Connection = "BlobConnectionString")] BlobContainerClient blobContainerClient,
             ILogger log)
         {
-            Init(blobContainerClient);
-            var rawString = new StreamReader(req.Body).ReadToEnd();
-            var update = JsonConvert.DeserializeObject<Update>(rawString);
-
-            var text = update.InlineQuery?.Query ?? update.Message?.Text;
-            await _publisher.Publish(new TelegramUpdateNotification()
+            try
             {
-                Update = update
-            });
+                Init(blobContainerClient);
+                var rawString = new StreamReader(req.Body).ReadToEnd();
+                var update = JsonConvert.DeserializeObject<Update>(rawString);
 
-            return new OkResult();
-            if (text != null && text.StartsWith("/"))
-            {
-                if (text.StartsWith("/start"))
+                var text = update.InlineQuery?.Query ?? update.Message?.Text;
+                await _publisher.Publish(new TelegramUpdateNotification()
                 {
-                    await _client.SendAnswer("Hello Billy Brother!", update);
-                }
-                return new OkResult();
+                    Update = update
+                });
+            } 
+            catch (Exception ex)
+            {
+                log.LogError(ex, "unhandled ex");
             }
-
-            if (string.IsNullOrEmpty(text))
-            {
-                await _client.SendAnswer("smth was wrong in my life", update);
-                log.LogInformation("Text was empty");
-                return new OkResult();
-            }
-            var voice = await GetVoice(text);
-            var linkResult = await voice.MapAsync(async (voiceStream) =>
-            {
-                var blobName = $"temp_{Guid.NewGuid()}.mp3";
-                var blob = blobContainerClient.GetBlobClient(blobName);
-                var resp = await blob.UploadAsync(voiceStream);
-
-                var link = blob
-                .GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddHours(2))
-                .ToString();
-                log.Log(LogLevel.Information, $"link generated: {link}");
-
-                await _client.SendMusic(link, update);
-                return "ok";
-            });
-            return linkResult.Match(_ =>
-            {
-                log.LogInformation("It was ok");
-                return new OkResult();
-            }, err =>
-            {
-                log.LogError($"smth was wrong. message: {err.Message}");
-                return new OkResult();
-            });
+            return new OkResult();
         }
 
         private static async Task<Result<Stream>> GetVoice(string text)
