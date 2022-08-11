@@ -26,7 +26,6 @@ namespace GCH.TelegramTriggerFunction
             builder.Services.Configure<TelegramBotSettings>(
                 it => configuration.GetSection(nameof(TelegramBotSettings))
                 .Bind(it));
-            builder.Services.AddLogging();
             builder.Services.AddScoped<IVoicesContainer>(serviceProvider =>
                 new VoicesContainer(
                     new BlobContainerClient(
