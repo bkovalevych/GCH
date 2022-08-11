@@ -7,11 +7,12 @@ namespace GCH.Infrastructure.OggReader
     public class OggReaderService
     {
         private readonly ILogger<OggReaderService> _logger;
-
+        private string tempDir;
         public OggReaderService(string binPath, string tempPath, ILogger<OggReaderService> logger)
         {
             if (!string.IsNullOrWhiteSpace(binPath))
             {
+                tempDir = tempPath;
                 GlobalFFOptions.Configure(new FFOptions
                 {
                     BinaryFolder = binPath,
@@ -23,8 +24,8 @@ namespace GCH.Infrastructure.OggReader
         }
         public async Task<Stream> ConcatStreams(Stream streamOne, Stream streamTwo)
         {
-            var fileNameOne = Guid.NewGuid().ToString() + ".ogg";
-            var fileNameTwo = Guid.NewGuid().ToString() + ".ogg";
+            var fileNameOne = tempDir + Guid.NewGuid().ToString() + ".ogg";
+            var fileNameTwo = tempDir + Guid.NewGuid().ToString() + ".ogg";
             var memoryStream = new MemoryStream();
             _logger.LogWarning("start processing {0}", "message");
             try
