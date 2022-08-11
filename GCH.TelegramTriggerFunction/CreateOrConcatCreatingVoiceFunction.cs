@@ -27,7 +27,7 @@ namespace GCH.TelegramTriggerFunction
         private BlobContainerClient _blobCreatedContainerClient;
 
         public CreateOrConcatCreatingVoiceFunction(IWrappedTelegramClient client, IVoiceLabelSource source,
-            OggReaderService oggReader, ILogger logger)
+            OggReaderService oggReader, ILogger<CreateOrConcatCreatingVoiceFunction> logger)
         {
             _client = client;
             _source = source;
