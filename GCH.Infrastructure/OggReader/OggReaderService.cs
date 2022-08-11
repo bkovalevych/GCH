@@ -48,7 +48,7 @@ namespace GCH.Infrastructure.OggReader
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Ogg error");
-                return memoryStream;
+                throw;
             }
             finally
             {
