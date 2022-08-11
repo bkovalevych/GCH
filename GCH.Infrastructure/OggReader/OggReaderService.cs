@@ -15,7 +15,8 @@ namespace GCH.Infrastructure.OggReader
                 GlobalFFOptions.Configure(new FFOptions
                 {
                     BinaryFolder = binPath,
-                    TemporaryFilesFolder = tempPath
+                    TemporaryFilesFolder = tempPath,
+                    WorkingDirectory = tempPath
                 });
             }
             _logger = logger;
