@@ -22,17 +22,16 @@ namespace GCH.TelegramTriggerFunction
         private readonly IWrappedTelegramClient _client;
         private readonly IVoiceLabelSource _source;
         private readonly OggReaderService _oggReader;
-        private readonly ILogger _logger;
+        private ILogger _logger;
         private BlobContainerClient _blobVoicesContainerClient;
         private BlobContainerClient _blobCreatedContainerClient;
 
         public CreateOrConcatCreatingVoiceFunction(IWrappedTelegramClient client, IVoiceLabelSource source,
-            OggReaderService oggReader, ILogger<CreateOrConcatCreatingVoiceFunction> logger)
+            OggReaderService oggReader)
         {
             _client = client;
             _source = source;
             _oggReader = oggReader;
-            _logger = logger;
         }
 
         [FunctionName("CreateOrConcatCreatingVoiceFunction")]
@@ -45,9 +44,10 @@ namespace GCH.TelegramTriggerFunction
             [Blob(
             blobPath: "uservoices",
             access: FileAccess.ReadWrite,
-            Connection = "BlobConnectionString")] BlobContainerClient blobCreatedContainerClient
-            )
+            Connection = "BlobConnectionString")] BlobContainerClient blobCreatedContainerClient,
+            ILogger logger)
         {
+            _logger = logger;
             _blobVoicesContainerClient = blobVoicesContainerClient;
             _blobCreatedContainerClient = blobCreatedContainerClient;
 
@@ -145,6 +145,7 @@ namespace GCH.TelegramTriggerFunction
                     await blobInstance.UploadAsync(voiceToAdd);
                     duration = await _oggReader.GetDuration(voiceToAdd);
                 }
+                _logger.LogInformation("Voice was processed. Id {0}, Voice {1}, duration {2}", msg.ChatId, msg.FileName, duration);
                 voiceToAdd.Dispose();
                 return duration;
             });
