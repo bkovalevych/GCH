@@ -25,7 +25,7 @@ namespace GCH.TelegramTriggerFunction
         private ILogger _logger;
         private BlobContainerClient _blobVoicesContainerClient;
         private BlobContainerClient _blobCreatedContainerClient;
-
+        private QueueMessageToAddVoice _currentMessage;
         public CreateOrConcatCreatingVoiceFunction(IWrappedTelegramClient client, IVoiceLabelSource source,
             OggReaderService oggReader)
         {
@@ -55,7 +55,12 @@ namespace GCH.TelegramTriggerFunction
                    from voice in GetVoiceToAdd(msg)
                    from duration in AddVoice(msg, voice)
                    select (msg, duration))
-                   .Match(SucceessResponse, async (err) => { });
+                   .Match(SucceessResponse, async (err) => 
+                   {
+                       await _client.Client.SendTextMessageAsync(
+                           _currentMessage.ChatId,
+                           err.Message);
+                   });
         }
 
         private async Task SucceessResponse((QueueMessageToAddVoice, TimeSpan) msgAndSize)
@@ -82,7 +87,12 @@ namespace GCH.TelegramTriggerFunction
         private TryAsync<QueueMessageToAddVoice> Parse(string rawMsg)
         {
             return new TryAsync<QueueMessageToAddVoice>(
-                async () => JsonConvert.DeserializeObject<QueueMessageToAddVoice>(rawMsg));
+                async () => {
+
+                    var msg = JsonConvert.DeserializeObject<QueueMessageToAddVoice>(rawMsg);
+                    _currentMessage = msg;
+                    return msg;
+                });
         }
 
         private TryAsync<Stream> GetVoiceToAdd(QueueMessageToAddVoice msg)
