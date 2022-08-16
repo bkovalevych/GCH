@@ -77,7 +77,7 @@ namespace GCH.Infrastructure.OggReader
 
         public async Task<TimeSpan> GetDuration(Uri uri)
         {
-            var fileName = "./temp.ogg";
+            var fileName = Path.Combine(GlobalFFOptions.Current.WorkingDirectory, "temp.ogg");
 
             try
             {
