@@ -10,11 +10,11 @@
 
             public const string Language = "language";
 
-            public const string LanguageEn = "language/en";
+            public const string LanguageEn = "language/en-US";
 
-            public const string LanguageUa = "language/ua";
+            public const string LanguageUa = "language/uk-UA";
 
-            public const string LanguageRu = "language/ru";
+            public const string LanguageRu = "language/ru-RU";
         }
 
         public static class CreateVoiceButtons

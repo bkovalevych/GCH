@@ -61,11 +61,38 @@ namespace GCH.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Back to settings.
+        /// </summary>
+        internal static string BackToSettings {
+            get {
+                return ResourceManager.GetString("BackToSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancel.
         /// </summary>
         internal static string Cancel {
             get {
                 return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose settings to change.
+        /// </summary>
+        internal static string ChooseSettingsToChange {
+            get {
+                return ResourceManager.GetString("ChooseSettingsToChange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File was not found.
+        /// </summary>
+        internal static string FileWasNotFound {
+            get {
+                return ResourceManager.GetString("FileWasNotFound", resourceCulture);
             }
         }
         
@@ -79,11 +106,20 @@ namespace GCH.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Hello.
+        ///   Looks up a localized string similar to Hello ♂{0}♂. This is a bot to create ♂Right♂ voice mems. In order to create mem use command /create..
         /// </summary>
-        internal static string GoToCreateMessage {
+        internal static string Greeting {
             get {
-                return ResourceManager.GetString("GoToCreateMessage", resourceCulture);
+                return ResourceManager.GetString("Greeting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Language.
+        /// </summary>
+        internal static string LanguageSelected {
+            get {
+                return ResourceManager.GetString("LanguageSelected", resourceCulture);
             }
         }
         
@@ -106,11 +142,47 @@ namespace GCH.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to selected.
+        /// </summary>
+        internal static string Selected {
+            get {
+                return ResourceManager.GetString("Selected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Send me a voice or choose from existing.
+        /// </summary>
+        internal static string SendMeVoice {
+            get {
+                return ResourceManager.GetString("SendMeVoice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Settings.
         /// </summary>
         internal static string Settings {
             get {
                 return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to From {0} to {1} mems.
+        /// </summary>
+        internal static string StateAlertMessage {
+            get {
+                return ResourceManager.GetString("StateAlertMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ♂RIGHT♂ Voice.
+        /// </summary>
+        internal static string VoiceCaption {
+            get {
+                return ResourceManager.GetString("VoiceCaption", resourceCulture);
             }
         }
     }

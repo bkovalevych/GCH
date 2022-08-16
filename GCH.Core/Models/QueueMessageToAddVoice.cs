@@ -10,6 +10,8 @@
 
         public string VoiceLabelName { get; set; }
 
+        public TimeSpan Duration { get; set; }
+
         public Dictionary<string, string> ChatState { get; set; }
     }
 }

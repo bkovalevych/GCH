@@ -1,67 +1,94 @@
 ﻿using FFMpegCore;
 using FFMpegCore.Pipes;
+using GCH.Core.Interfaces.FfmpegHelpers;
+using GCH.Core.LoggerWrapper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace GCH.Infrastructure.OggReader
 {
-    public class OggReaderService
+    public class OggReaderService : IOggReaderService
     {
-        private readonly ILogger<OggReaderService> _logger;
+        private readonly LoggerWrapperService _loggerWrapper;
 
-        public OggReaderService(string binPath, string tempPath, ILogger<OggReaderService> logger)
+        public OggReaderService(IConfiguration configuration, LoggerWrapperService loggerWrapper)
         {
+            string binPath = configuration["FfmpegBin"];
+            string tempPath = configuration["TempFolder"];
             if (!string.IsNullOrWhiteSpace(binPath))
             {
                 GlobalFFOptions.Configure(new FFOptions
                 {
                     BinaryFolder = binPath,
-                    TemporaryFilesFolder = tempPath
+                    TemporaryFilesFolder = tempPath,
+                    WorkingDirectory = tempPath
                 });
+
             }
-            _logger = logger;
+            _loggerWrapper = loggerWrapper;
         }
-        public async Task<Stream> ConcatStreams(Stream streamOne, Stream streamTwo)
+
+        public async Task<Stream> Concat(Stream srcOne, Stream srcTwo)
         {
-            var fileNameOne = Guid.NewGuid().ToString() + ".ogg";
-            var fileNameTwo = Guid.NewGuid().ToString() + ".ogg";
             var memoryStream = new MemoryStream();
-            _logger.LogWarning("start processing {0}", "message");
+            _loggerWrapper.Logger.LogDebug("start processing {}", srcOne);
+            var tempFiles = new List<string>()
+            {
+                Path.Combine(GlobalFFOptions.Current.WorkingDirectory,  Guid.NewGuid().ToString() + ".ogg"),
+                Path.Combine(GlobalFFOptions.Current.WorkingDirectory,  Guid.NewGuid().ToString() + ".ogg")
+            };
             try
             {
-                var processed = await FFMpegArguments
-                .FromPipeInput(new StreamPipeSource(streamOne))
-                .OutputToFile(fileNameOne, true, options => options
-                    .ForceFormat("ogg"))
-                .ProcessAsynchronously();
-                processed = await FFMpegArguments
-                    .FromPipeInput(new StreamPipeSource(streamTwo))
-                    .OutputToFile(fileNameTwo, true, options => options
-                        .ForceFormat("ogg"))
-                    .ProcessAsynchronously();
-                processed = await FFMpegArguments.FromConcatInput(new string[] { fileNameOne, fileNameTwo })
-                    .OutputToPipe(new StreamPipeSink(memoryStream), 
-                    args => args.ForceFormat("ogg"))
+
+                var firstCall = FFMpegArguments.FromPipeInput(new StreamPipeSource(srcOne), args => args.ForceFormat("ogg"))
+                    .OutputToFile(tempFiles[0]).ProcessAsynchronously();
+                var secondCall = FFMpegArguments.FromPipeInput(new StreamPipeSource(srcTwo), args => args.ForceFormat("ogg"))
+                    .OutputToFile(tempFiles[1]).ProcessAsynchronously();
+                await firstCall;
+                await secondCall;
+                await FFMpegArguments.FromConcatInput(tempFiles)
+                    .OutputToPipe(new StreamPipeSink(memoryStream), args => args.ForceFormat("ogg"))
                     .ProcessAsynchronously();
                 memoryStream.Position = 0;
+                _loggerWrapper.Logger.LogInformation("Successful concat, Voice size {}", memoryStream.Length);
                 return memoryStream;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Ogg error");
+                _loggerWrapper.Logger.LogError(ex, "Ogg error. Message {}", ex.Message);
                 throw;
             }
             finally
             {
-                File.Delete(fileNameOne);
-                File.Delete(fileNameTwo);
+                File.Delete(tempFiles[0]);
+                File.Delete(tempFiles[1]);
             }
         }
 
-        public async Task<TimeSpan> GetDuration(Stream stream)
+        public async Task<Stream> ProcessVoiceMem(Stream stream)
         {
-            var bitRate = 8000;
-            var duration = TimeSpan.FromSeconds(stream.Length / bitRate);
-            return duration;
+            var memStr = new MemoryStream();
+            await FFMpegArguments.FromPipeInput(new StreamPipeSource(stream))
+                .OutputToPipe(new StreamPipeSink(memStr), args => args.ForceFormat("ogg"))
+                .ProcessAsynchronously();
+            memStr.Position = 0;
+            return memStr;
+        }
+
+        public async Task<TimeSpan> GetDuration(Uri uri)
+        {
+            var fileName = "./temp.ogg";
+
+            try
+            {
+                var analysis = await FFProbe.AnalyseAsync(uri);
+                return analysis.Duration;
+            }
+            finally 
+            {
+                File.Delete(fileName);
+            }
+
         }
     }
 }

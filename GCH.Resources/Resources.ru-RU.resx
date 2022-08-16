@@ -126,4 +126,37 @@
   <data name="GetCurrentVoice" xml:space="preserve">
     <value>Получить ♂RIGHT♂ голосовое и отправить путену</value>
   </data>
+  <data name="Greeting" xml:space="preserve">
+    <value>Привет ♂{0}♂. Это бот чтобы делать ♂Right♂ голосовые мемы. Чтобы создать мем введи команду /create. Помни путен хйло.</value>
+  </data>
+  <data name="LanguageSelected" xml:space="preserve">
+    <value>Язык (птн хйло)</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>выбран</value>
+  </data>
+  <data name="BackToSettings" xml:space="preserve">
+    <value>Вернутся к настройкам</value>
+  </data>
+  <data name="ChooseSettingsToChange" xml:space="preserve">
+    <value>Выберите настройки для изменения</value>
+  </data>
+  <data name="VoiceCaption" xml:space="preserve">
+    <value>♂RIGHT♂ мем</value>
+  </data>
+  <data name="FileWasNotFound" xml:space="preserve">
+    <value>Файл не найден</value>
+  </data>
+  <data name="SendMeVoice" xml:space="preserve">
+    <value>Отправь мне голосовое или выбери мем (птн хйло)</value>
+  </data>
+  <data name="StateAlertMessage" xml:space="preserve">
+    <value>Мемы {0} - {1}. (птн хйло)</value>
+  </data>
+  <data name="LoadMore" xml:space="preserve">
+    <value>Загрузить больше</value>
+  </data>
+  <data name="LoadPrev" xml:space="preserve">
+    <value>Загрузить меньше</value>
+  </data>
 </root>

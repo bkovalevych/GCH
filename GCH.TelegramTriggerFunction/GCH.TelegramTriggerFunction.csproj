@@ -11,10 +11,12 @@
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.0.1" />
     <PackageReference Include="NAudio" Version="2.1.0" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+    <PackageReference Include="System.Resources.ResourceManager" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GCH.Core\GCH.Core.csproj" />
     <ProjectReference Include="..\GCH.Infrastructure\GCH.Infrastructure.csproj" />
+    <ProjectReference Include="..\GCH.Resources\GCH.Resources.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="ffmpegLibs\ffmpeg.exe">
