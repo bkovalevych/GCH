@@ -1,5 +1,7 @@
-﻿using GCH.Core.TelegramLogic.Interfaces;
+﻿using GCH.Core.LoggerWrapper;
+using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Infrastructure.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -12,12 +14,17 @@ namespace GCH.Infrastructure.TelegramBot.Services
     {
         public TelegramBotClient Client { get; }
         private readonly TelegramBotSettings _settings;
-
-        public WrappedTelegramClient(IOptions<TelegramBotSettings> settings)
+        private ILogger Logger { get => _loggerWrapper.Logger; }
+        private readonly  LoggerWrapperService _loggerWrapper;
+        public WrappedTelegramClient(IOptions<TelegramBotSettings> settings,
+            LoggerWrapperService logger)
         {
             _settings = settings.Value;
+            _loggerWrapper = logger;
             Client = new TelegramBotClient(_settings.Token);
         }
+
+        public string BaseUrl { get => $"https://api.telegram.org/file/bot{_settings.Token}/"; }
 
         public async Task SetWebhookAsync(string newUrl = null)
         {
@@ -36,6 +43,7 @@ namespace GCH.Infrastructure.TelegramBot.Services
 
         public async Task SendAnswer(string text, Update update)
         {
+            Logger.LogDebug("Start sending answer");
             if (update.Message?.Chat.Id != null)
             {
                 await Client.SendTextMessageAsync(update.Message.Chat.Id, text);

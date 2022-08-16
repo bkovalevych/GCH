@@ -132,7 +132,31 @@
   <data name="LoadPrev" xml:space="preserve">
     <value>Load Prev</value>
   </data>
-  <data name="GoToCreateMessage" xml:space="preserve">
-    <value>Hello</value>
+  <data name="Greeting" xml:space="preserve">
+    <value>Hello ♂{0}♂. This is a bot to create ♂Right♂ voice mems. In order to create mem use command /create.</value>
+  </data>
+  <data name="LanguageSelected" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>selected</value>
+  </data>
+  <data name="BackToSettings" xml:space="preserve">
+    <value>Back to settings</value>
+  </data>
+  <data name="ChooseSettingsToChange" xml:space="preserve">
+    <value>Choose settings to change</value>
+  </data>
+  <data name="VoiceCaption" xml:space="preserve">
+    <value>♂RIGHT♂ Voice</value>
+  </data>
+  <data name="FileWasNotFound" xml:space="preserve">
+    <value>File was not found</value>
+  </data>
+  <data name="SendMeVoice" xml:space="preserve">
+    <value>Send me a voice or choose from existing</value>
+  </data>
+  <data name="StateAlertMessage" xml:space="preserve">
+    <value>From {0} to {1} mems</value>
   </data>
 </root>

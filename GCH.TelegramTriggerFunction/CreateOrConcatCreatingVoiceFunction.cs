@@ -1,16 +1,22 @@
 ﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using GCH.Core.Interfaces.Sources;
+using GCH.Core.LoggerWrapper;
 using GCH.Core.Models;
 using GCH.Core.TelegramLogic.Handlers.Basic;
 using GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Infrastructure.OggReader;
 using LanguageExt;
+using LanguageExt.Common;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -22,13 +28,14 @@ namespace GCH.TelegramTriggerFunction
         private readonly IWrappedTelegramClient _client;
         private readonly IVoiceLabelSource _source;
         private readonly OggReaderService _oggReader;
-        private ILogger _logger;
+        private readonly LoggerWrapperService _loggerWrapper;
         private BlobContainerClient _blobVoicesContainerClient;
         private BlobContainerClient _blobCreatedContainerClient;
         private QueueMessageToAddVoice _currentMessage;
         public CreateOrConcatCreatingVoiceFunction(IWrappedTelegramClient client, IVoiceLabelSource source,
-            OggReaderService oggReader)
+            OggReaderService oggReader, LoggerWrapperService loggerWrapper)
         {
+            _loggerWrapper = loggerWrapper;
             _client = client;
             _source = source;
             _oggReader = oggReader;
@@ -47,20 +54,17 @@ namespace GCH.TelegramTriggerFunction
             Connection = "BlobConnectionString")] BlobContainerClient blobCreatedContainerClient,
             ILogger logger)
         {
-            _logger = logger;
+            _loggerWrapper.Logger = logger;
             _blobVoicesContainerClient = blobVoicesContainerClient;
             _blobCreatedContainerClient = blobCreatedContainerClient;
 
             await (from msg in Parse(rawMsg)
-                   from voice in GetVoiceToAdd(msg)
-                   from duration in AddVoice(msg, voice)
+                   from voiceUrl in GetVoiceToAdd(msg)
+                   from duration in AddVoice(msg, voiceUrl)
                    select (msg, duration))
-                   .Match(SucceessResponse, async (err) => 
-                   {
-                       await _client.Client.SendTextMessageAsync(
-                           _currentMessage.ChatId,
-                           err.Message);
-                   });
+                   .Match(
+                SucceessResponse, 
+                (err) => FailResponse(err, _currentMessage));
         }
 
         private async Task SucceessResponse((QueueMessageToAddVoice, TimeSpan) msgAndSize)
@@ -72,94 +76,93 @@ namespace GCH.TelegramTriggerFunction
             var markup = new InlineKeyboardMarkup(buttons);
             await _client.Client.SendTextMessageAsync(
                 msg.ChatId,
-                $"Voice added. Duration - {duration:mm\\:ss}. Max duration is {Constants.MaxDuration:mm\\:ss}",
+                $@"Voice added. The duration is about {duration:mm\:ss\:ff}. Max duration is {Constants.MaxDuration:mm\:ss\:ff}",
                 replyMarkup: markup);
         }
 
         private async Task FailResponse(Exception err, QueueMessageToAddVoice msg)
         {
-            _logger.LogInformation(err, "CreateOrConcatVoiceFunction.FailResponse. id = {0}, voice = {1}", msg.ChatId, msg.FileName);
+            _loggerWrapper.Logger.LogError(err, "CreateOrConcatVoiceFunction.FailResponse. id = {}, voice = {}, message = {}", 
+                msg.ChatId, msg.FileName, err.Message);
             await _client.Client.SendTextMessageAsync(
                 msg.ChatId,
                 err.Message);
         }
 
-        private TryAsync<QueueMessageToAddVoice> Parse(string rawMsg)
+        private TryAsync<QueueMessageToAddVoice> Parse(string rawMsg) => async () => 
         {
-            return new TryAsync<QueueMessageToAddVoice>(
-                async () => {
-
-                    var msg = JsonConvert.DeserializeObject<QueueMessageToAddVoice>(rawMsg);
-                    _currentMessage = msg;
-                    return msg;
-                });
-        }
-
-        private TryAsync<Stream> GetVoiceToAdd(QueueMessageToAddVoice msg)
-        {
-            return new TryAsync<Stream>(async () =>
+            var msg = JsonConvert.DeserializeObject<QueueMessageToAddVoice>(rawMsg);
+            _currentMessage = msg;
+            if (msg.Duration > Constants.MaxDuration)
             {
-                var stream = new MemoryStream();
-                if (!string.IsNullOrEmpty(msg.VoiceLabelName))
-                {
-                    var blob = _blobVoicesContainerClient
-                        .GetBlobClient(msg.VoiceLabelName);
-                    await blob.DownloadToAsync(stream);
-                }
-                else if (!string.IsNullOrEmpty(msg.ChatVoiceTelegramId))
-                {
-                    var t = await _client.Client
-                        .GetFileAsync(msg.ChatVoiceTelegramId);
-                    await _client.Client
-                        .DownloadFileAsync(t.FilePath, stream);
-                }
-                stream.Position = 0;
-                var duration = await _oggReader.GetDuration(stream);
-                if (duration > Constants.MaxDuration)
-                {
-                    var err = new Exception($"Too long duration. Current is {duration:mm\\:ss}. Max is {Constants.MaxDuration:mm\\:ss}.");
-                    await FailResponse(err, msg);
-                    throw err;
-                }
-                return stream;
-            });
-        }
+                var err = new Exception(@$"Too long voice. Current is {msg.Duration:mm\:ss\ff}. Max is {Constants.MaxDuration:mm\:ss\ff}.");
+                return new Result<QueueMessageToAddVoice>(err);
+            }
+            return msg;
+        };
+        
 
-        private TryAsync<TimeSpan> AddVoice(QueueMessageToAddVoice msg, Stream voiceToAdd)
+        private TryAsync<Stream> GetVoiceToAdd(QueueMessageToAddVoice msg) => async () =>
         {
-            return new TryAsync<TimeSpan>(async () =>
+            var memStr = new MemoryStream();
+            if (!string.IsNullOrEmpty(msg.VoiceLabelName))
             {
-                var blobInstance = _blobCreatedContainerClient.GetBlobClient(msg.FileName + ".ogg");
-                var exists = await blobInstance.ExistsAsync();
-                var duration = TimeSpan.Zero;
-                if (exists)
-                {
-                    using var exStream = new MemoryStream();
-                    await blobInstance.DownloadToAsync(exStream);
-                    exStream.Position = 0;
-                    var fisrtDuration = await _oggReader.GetDuration(exStream);
-                    var secondDuration = await _oggReader.GetDuration(voiceToAdd);
-                    var sumDuration = fisrtDuration + secondDuration;
-                    if (sumDuration > Constants.MaxDuration)
-                    {
-                        var err = new Exception($"Too long duration. Current is {duration:mm\\:ss}. Max is {Constants.MaxDuration:mm\\:ss}.");
-                        await FailResponse(err, msg);
-                        throw err;
-                    }
-                    var result = await _oggReader.ConcatStreams(exStream, voiceToAdd);
-                    duration = await _oggReader.GetDuration(result);
-                    await blobInstance.UploadAsync(result, overwrite: true);
-                }
-                else
-                {
-                    await blobInstance.UploadAsync(voiceToAdd);
-                    duration = await _oggReader.GetDuration(voiceToAdd);
-                }
-                _logger.LogInformation("Voice was processed. Id {0}, Voice {1}, duration {2}", msg.ChatId, msg.FileName, duration);
-                voiceToAdd.Dispose();
-                return duration;
-            });
-        }
+                var blob = _blobVoicesContainerClient
+                    .GetBlobClient(msg.VoiceLabelName);
+                await blob.DownloadToAsync(memStr);
+            }
+            else if (!string.IsNullOrEmpty(msg.ChatVoiceTelegramId))
+            {
+                var t = await _client.Client
+                    .GetFileAsync(msg.ChatVoiceTelegramId);
+                await _client.Client.DownloadFileAsync(t.FilePath, memStr);
+            }
+            memStr.Position = 0;
+            return memStr;
+        };
+        
 
+        private TryAsync<TimeSpan> AddVoice(QueueMessageToAddVoice msg, Stream voiceToAdd) => async () =>
+        {
+            var blobInstance = _blobCreatedContainerClient.GetBlobClient(msg.FileName + ".ogg");
+            var exists = await blobInstance.ExistsAsync();
+            var sumDuration = msg.Duration;
+            BlobProperties properties;
+            if (exists)
+            {
+                properties = await blobInstance.GetPropertiesAsync();
+                if (!properties.Metadata.ContainsKey("Duration"))
+                {
+                    properties.Metadata["Duration"] = (await _oggReader.GetDuration(blobInstance.GenerateSasUri(
+                        BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(1)))).ToString();
+                    await blobInstance.SetMetadataAsync(properties.Metadata);
+                }
+                var firstDuration = TimeSpan.Parse(properties.Metadata["Duration"]);
+                sumDuration += firstDuration;
+                if (sumDuration > Constants.MaxDuration)
+                {
+                    return new Result<TimeSpan>(new Exception($"Too long duration. Current is {firstDuration:mm\\:ss\\:ff} " +
+                        $"and you try to add {msg.Duration:mm\\:ss\\:ff} which is longer than {Constants.MaxDuration:mm\\:ss\\:ff}"));
+                }
+
+                using var firstStream = new MemoryStream(); 
+                await blobInstance.DownloadToAsync(firstStream);
+                firstStream.Position = 0;
+                using var result = await _oggReader.Concat(firstStream, voiceToAdd);
+                await blobInstance.UploadAsync(result, overwrite: true);
+            }
+            else
+            {
+                await blobInstance.UploadAsync(voiceToAdd);
+                properties = await blobInstance.GetPropertiesAsync();
+                properties.Metadata["Duration"] = sumDuration.ToString();
+            }
+            await blobInstance.SetMetadataAsync(properties.Metadata);
+
+            _loggerWrapper.Logger.LogInformation("Voice was processed. Id {}, Voice {}, duration {}", 
+                msg.ChatId, msg.FileName, sumDuration);
+            
+            return sumDuration;
+        };
     }
 }

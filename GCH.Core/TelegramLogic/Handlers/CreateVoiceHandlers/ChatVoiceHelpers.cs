@@ -1,17 +1,12 @@
 ﻿using GCH.Core.Models;
 using GCH.Core.TelegramLogic.Handlers.Basic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
 {
     public static class ChatVoiceHelpers
     {
-        public static IEnumerable<IEnumerable<InlineKeyboardButton>> AddFooterButtons(PaginatedList<VoiceLabel> paginatedResult, 
+        public static IEnumerable<IEnumerable<InlineKeyboardButton>> AddFooterButtons(PaginatedList<VoiceLabel> paginatedResult,
             string fileName)
         {
             var buttons = FillContent(paginatedResult);
@@ -38,13 +33,13 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
         }
 
         private static IEnumerable<InlineKeyboardButton> AddPreviousButton(
-            this IEnumerable<InlineKeyboardButton> buttons, 
+            this IEnumerable<InlineKeyboardButton> buttons,
             PaginatedList<VoiceLabel> paginatedResult)
         {
             var offset = paginatedResult.Offset;
             if (paginatedResult.CanLoadPrevious)
             {
-                return buttons.Append(new InlineKeyboardButton("Load Previous")
+                return buttons.Append(new InlineKeyboardButton(Resources.Resources.LoadPrev)
                 {
                     CallbackData = Constants.CreateVoiceButtons.Previous + (offset - Constants.DefaultPageSize)
                 });
@@ -60,7 +55,7 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
             var count = paginatedResult.Count;
             if (paginatedResult.CanLoadNext)
             {
-                return buttons.Append(new InlineKeyboardButton("Load More")
+                return buttons.Append(new InlineKeyboardButton(Resources.Resources.LoadMore)
                 {
                     CallbackData = Constants.CreateVoiceButtons.Next + (offset + count)
                 });
@@ -71,14 +66,14 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
         private static IEnumerable<InlineKeyboardButton> AddCancelButton(
             this IEnumerable<InlineKeyboardButton> buttons)
         {
-            return buttons.Append(new InlineKeyboardButton("Cancel")
+            return buttons.Append(new InlineKeyboardButton(Resources.Resources.Cancel)
             {
                 CallbackData = Constants.CreateVoiceButtons.Cancel
             });
         }
 
         private static IEnumerable<InlineKeyboardButton> AddStateButton(
-            this IEnumerable<InlineKeyboardButton> buttons, 
+            this IEnumerable<InlineKeyboardButton> buttons,
             PaginatedList<VoiceLabel> paginatedResult,
             string fileName)
         {
@@ -97,7 +92,7 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
         {
             if (!string.IsNullOrEmpty(fileName))
             {
-                return buttons.Append(new InlineKeyboardButton("Get voice now")
+                return buttons.Append(new InlineKeyboardButton(Resources.Resources.GetCurrentVoice)
                 {
                     CallbackData = Constants.CreateVoiceButtons.GetVoice + fileName
                 });

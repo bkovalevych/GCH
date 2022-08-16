@@ -28,11 +28,11 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
         public override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             var upd = notification.Update;
-            if (upd.Message.Voice.Duration > 60)
+            if (upd.Message.Voice.Duration > Constants.MaxDuration.TotalSeconds)
             {
                 await ClientWrapper.Client.SendTextMessageAsync(
                     upd.Message.Chat.Id,
-                    "Voice too long. Bigger than 60sec");
+                    @$"Voice too long. Bigger than {Constants.MaxDuration:mm\:ss\:ff}");
                 return;
             }
             var settings = await _settingsTable.GetByChatId(upd.Message.Chat.Id);
@@ -49,7 +49,8 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
                 ChatId = upd.Message.Chat.Id,
                 ChatVoiceTelegramId = upd.Message.Voice.FileId,
                 FileName = fileName,
-                ChatState = new Dictionary<string, string>()
+                ChatState = new Dictionary<string, string>(),
+                Duration = TimeSpan.FromSeconds(upd.Message.Voice.Duration)
             };
             await _queueClient.SendMessageAsync(Convert.ToBase64String(
                 Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(msg))), 

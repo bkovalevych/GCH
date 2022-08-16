@@ -1,43 +1,57 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using GCH.Core.Interfaces.Tables;
+using GCH.Core.LoggerWrapper;
 using GCH.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace GCH.Infrastructure.Tables
 {
     public class UserSettingsTable : BaseTable, IUserSettingsTable
     {
         private const string PartitionKeyForSettings = "userSettings";
-        public UserSettingsTable(TableClient userSettingsTable) : base(userSettingsTable)
+        private readonly LoggerWrapperService _loggerWrapper;
+
+        public UserSettingsTable(TableClient userSettingsTable, 
+            LoggerWrapperService logger) : base(userSettingsTable)
         {
+            _loggerWrapper = logger;
         }
 
         public async Task<UserSettings> GetByChatId(long chatId)
         {
+            _loggerWrapper.Logger.LogDebug("start getting settings. ChatId = {}", chatId);
             await UserSettingsTable.CreateIfNotExistsAsync();
-            UserSettings settings = new UserSettings()
+            var settings = new UserSettings()
             {
                 ChatId = chatId,
                 Language = "en",
                 LastVoiceId = ""
             };
-            try
+            
+            var queryEnumerator = UserSettingsTable
+                .QueryAsync<UserSettingsEntity>(settings =>
+                settings.PartitionKey == PartitionKeyForSettings &&
+                settings.RowKey == chatId.ToString())
+                .GetAsyncEnumerator();
+            var exists = await queryEnumerator.MoveNextAsync();
+            if (exists)
             {
-                var settingsResponse = await UserSettingsTable
-                    .GetEntityAsync<UserSettingsEntity>(
-                    PartitionKeyForSettings, 
-                    chatId.ToString());
-                settings = settingsResponse.Value;
-            } 
-            catch (Exception e)
+                settings = queryEnumerator.Current;
+            }
+            else
             {
                 await UserSettingsTable.AddEntityAsync<UserSettingsEntity>(settings);
             }
+            _loggerWrapper.Logger.LogInformation("Got settings. ChatId = {}, LastVoiceId = {}", 
+                settings.ChatId, settings.LastVoiceId);    
+
             return settings;
         }
 
         public async Task SetSettings(UserSettings settings)
         {
+            _loggerWrapper.Logger.LogDebug("Start set settings");
             await UserSettingsTable.UpdateEntityAsync<UserSettingsEntity>(settings, ETag.All);
         }
 

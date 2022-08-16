@@ -6,6 +6,7 @@ namespace GCH.Core.TelegramLogic.Interfaces
     public interface IWrappedTelegramClient
     {
         TelegramBotClient Client { get; }
+        string BaseUrl { get; }
 
         Task SetWebhookAsync(string newUrl = null);
 

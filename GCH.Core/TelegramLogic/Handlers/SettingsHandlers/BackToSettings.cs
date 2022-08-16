@@ -5,6 +5,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
 using GCH.Core.Interfaces.Tables;
+using System.Globalization;
 
 namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
 {
@@ -28,8 +29,9 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
                 settings.Language = upd.CallbackQuery.Data["language/".Length..];
                 await _userSettingstable.SetSettings(settings);
             }
+            Resources.Resources.Culture = new CultureInfo(settings.Language);
 
-            var languageBtn = new InlineKeyboardButton($"Language: {settings.Language}") 
+            var languageBtn = new InlineKeyboardButton($"{Resources.Resources.LanguageSelected}: {settings.Language}") 
             { 
                 CallbackData = Constants.SettingsButtons.Language
             };
@@ -39,9 +41,9 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
             _ = await ClientWrapper.Client.EditMessageTextAsync(
                 upd.CallbackQuery.Message.Chat.Id,
                 upd.CallbackQuery.Message.MessageId,
-                "Choose settings to change:", 
-                replyMarkup: markup, 
-                cancellationToken: cancellationToken);
+                $"{Resources.Resources.ChooseSettingsToChange}:",
+                replyMarkup: markup,
+                cancellationToken: cancellationToken); ;
         }
 
         public override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)

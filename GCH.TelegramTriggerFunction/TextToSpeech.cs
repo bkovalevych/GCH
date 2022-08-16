@@ -1,6 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
+using GCH.Core.LoggerWrapper;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
 using GCH.Core.WordProcessing.Models;
@@ -27,11 +28,13 @@ namespace GCH.TelegramTriggerFunction
     {
         private readonly IWrappedTelegramClient _client;
         private readonly IPublisher _publisher;
-
+        private readonly LoggerWrapperService _logger;
         public TextToSpeech(
             IWrappedTelegramClient client,
-            IPublisher publisher)
+            IPublisher publisher,
+            LoggerWrapperService loggerWrapperService)
         {
+            _logger = loggerWrapperService;
             _client = client;
             _publisher = publisher;    
         }
@@ -45,9 +48,9 @@ namespace GCH.TelegramTriggerFunction
             Connection = "BlobConnectionString")] BlobContainerClient blobContainerClient,
             ILogger log)
         {
+            _logger.Logger = log;
             try
             {
-                Init(blobContainerClient);
                 var rawString = new StreamReader(req.Body).ReadToEnd();
                 var update = JsonConvert.DeserializeObject<Update>(rawString);
 
@@ -59,7 +62,7 @@ namespace GCH.TelegramTriggerFunction
             } 
             catch (Exception ex)
             {
-                log.LogError(ex, "unhandled ex");
+                log.LogError(ex, "unhandled ex. Message: {}", ex.Message);
             }
             return new OkResult();
         }

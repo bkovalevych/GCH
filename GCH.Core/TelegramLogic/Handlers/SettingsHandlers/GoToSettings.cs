@@ -3,9 +3,10 @@ using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot;
-using Telegram.Bot.Types;
+using Res = GCH.Resources.Resources;
 using Telegram.Bot.Types.ReplyMarkups;
 using GCH.Core.Interfaces.Tables;
+using System.Globalization;
 
 namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
 {
@@ -23,8 +24,9 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
         {
             var upd = notification.Update;
             var settings = await _userSettingstable.GetByChatId(upd.Message.Chat.Id);
-            var languageBtn = new InlineKeyboardButton($"Language: {settings.Language}") 
-            { 
+            Res.Culture = new CultureInfo(settings.Language);
+            var languageBtn = new InlineKeyboardButton($"{Res.LanguageSelected}: {settings.Language}") 
+            {
                 CallbackData = Constants.SettingsButtons.Language
             };
             
@@ -32,7 +34,7 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
 
             _ = await ClientWrapper.Client.SendTextMessageAsync(
                 upd.Message.Chat.Id, 
-                "Choose settings to change:", 
+                Res.Settings, 
                 replyMarkup: markup, 
                 cancellationToken: cancellationToken);
         }

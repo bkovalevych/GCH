@@ -7,15 +7,19 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot;
 using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types;
+using GCH.Core.Interfaces.Tables;
+using System.Globalization;
 
 namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
 {
     public class GetVoiceHandler : AbstractTelegramHandler
     {
+        private readonly IUserSettingsTable _userSettingsTable;
         private readonly IUserVoicesContainer _container;
 
-        public GetVoiceHandler(IWrappedTelegramClient client, IUserVoicesContainer container) : base(client)
+        public GetVoiceHandler(IWrappedTelegramClient client, IUserVoicesContainer container, IUserSettingsTable userSettingsTable) : base(client)
         {
+            _userSettingsTable = userSettingsTable;
             _container = container;
         }
 
@@ -25,21 +29,26 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
 
             var blobName = upd.CallbackQuery.Data[Constants.CreateVoiceButtons.GetVoice.Length..] + ".ogg";
             var blob = _container.BlobContainer.GetBlobClient(blobName);
+            var settings = await _userSettingsTable.GetByChatId(upd.CallbackQuery.Message.Chat.Id);
+            Resources.Resources.Culture = new CultureInfo(settings.Language);
             if (await blob.ExistsAsync(cancellationToken: cancellationToken))
             {
                 var uri = blob.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddHours(1));
-                await ClientWrapper.Client.SendVoiceAsync(upd.CallbackQuery.Message.Chat.Id, 
+                await ClientWrapper.Client.SendVoiceAsync(
+                    upd.CallbackQuery.Message.Chat.Id, 
                     new InputOnlineFile(uri),
-                    caption: "good voice",
+                    caption: Resources.Resources.VoiceCaption,
                     cancellationToken: cancellationToken);
             }
             else
             {
-                await ClientWrapper.Client.DeleteMessageAsync(upd.CallbackQuery.Message.Chat.Id,
+                await ClientWrapper.Client.DeleteMessageAsync(
+                    upd.CallbackQuery.Message.Chat.Id,
                     upd.CallbackQuery.Message.MessageId,
                     cancellationToken: cancellationToken);
-                await ClientWrapper.Client.SendTextMessageAsync(upd.CallbackQuery.Message.Chat.Id,
-                    "file was not found",
+                await ClientWrapper.Client.SendTextMessageAsync(
+                    upd.CallbackQuery.Message.Chat.Id,
+                    Resources.Resources.FileWasNotFound,
                     cancellationToken: cancellationToken);
             }
         }
