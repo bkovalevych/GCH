@@ -142,7 +142,7 @@
     <value>Оберіть те що змінити</value>
   </data>
   <data name="VoiceCaption" xml:space="preserve">
-    <value>♂RIGHT♂ мем</value>
+    <value>♂RIGHT♂ мем від @GachiBillieVoice_bot</value>
   </data>
   <data name="FileWasNotFound" xml:space="preserve">
     <value>Файл не знайдено</value>
@@ -158,5 +158,8 @@
   </data>
   <data name="LoadPrev" xml:space="preserve">
     <value>Загрузити менше</value>
+  </data>
+  <data name="AfterVoiceAddedMessage" xml:space="preserve">
+    <value>Голос додано. Час голосу приблизно {0:mm\:ss\:ff}. Максимум {1:mm\:ss\:ff}</value>
   </data>
 </root>

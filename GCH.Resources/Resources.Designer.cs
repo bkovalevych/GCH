@@ -61,6 +61,15 @@ namespace GCH.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Voice added. The duration is about {0:mm\:ss\:ff}. Max duration is {1:mm\:ss\:ff}.
+        /// </summary>
+        internal static string AfterVoiceAddedMessage {
+            get {
+                return ResourceManager.GetString("AfterVoiceAddedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Back to settings.
         /// </summary>
         internal static string BackToSettings {
@@ -178,7 +187,7 @@ namespace GCH.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ♂RIGHT♂ Voice.
+        ///   Looks up a localized string similar to ♂RIGHT♂ Voice by @GachiBillieVoice_bot.
         /// </summary>
         internal static string VoiceCaption {
             get {
