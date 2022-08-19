@@ -2,6 +2,7 @@
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using GCH.Core.Interfaces.Sources;
+using GCH.Core.Interfaces.Tables;
 using GCH.Core.LoggerWrapper;
 using GCH.Core.Models;
 using GCH.Core.TelegramLogic.Handlers.Basic;
@@ -11,12 +12,11 @@ using GCH.Infrastructure.OggReader;
 using LanguageExt;
 using LanguageExt.Common;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Globalization;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -28,13 +28,16 @@ namespace GCH.TelegramTriggerFunction
         private readonly IWrappedTelegramClient _client;
         private readonly IVoiceLabelSource _source;
         private readonly OggReaderService _oggReader;
+        private readonly IUserSettingsTable _userSettingsTable;
         private readonly LoggerWrapperService _loggerWrapper;
         private BlobContainerClient _blobVoicesContainerClient;
         private BlobContainerClient _blobCreatedContainerClient;
         private QueueMessageToAddVoice _currentMessage;
+
         public CreateOrConcatCreatingVoiceFunction(IWrappedTelegramClient client, IVoiceLabelSource source,
-            OggReaderService oggReader, LoggerWrapperService loggerWrapper)
+            OggReaderService oggReader, LoggerWrapperService loggerWrapper, IUserSettingsTable settingsTable)
         {
+            _userSettingsTable = settingsTable;
             _loggerWrapper = loggerWrapper;
             _client = client;
             _source = source;
@@ -63,7 +66,7 @@ namespace GCH.TelegramTriggerFunction
                    from duration in AddVoice(msg, voiceUrl)
                    select (msg, duration))
                    .Match(
-                SucceessResponse, 
+                SucceessResponse,
                 (err) => FailResponse(err, _currentMessage));
         }
 
@@ -72,24 +75,29 @@ namespace GCH.TelegramTriggerFunction
             var (msg, duration) = msgAndSize;
             var paged = await _source.LoadAsync(
                 int.Parse(msg.ChatState.TryGetValue("offset", out var offset) ? offset : "0"));
+            var settings = await _userSettingsTable.GetByChatId(msg.ChatId);
+            Resources.Resources.Culture = new CultureInfo(settings.Language);
+
             var buttons = ChatVoiceHelpers.AddFooterButtons(paged, msg.FileName);
             var markup = new InlineKeyboardMarkup(buttons);
             await _client.Client.SendTextMessageAsync(
                 msg.ChatId,
-                $@"Voice added. The duration is about {duration:mm\:ss\:ff}. Max duration is {Constants.MaxDuration:mm\:ss\:ff}",
+                string.Format(Resources.Resources.AfterVoiceAddedMessage, 
+                duration, 
+                Constants.MaxDuration),
                 replyMarkup: markup);
         }
 
         private async Task FailResponse(Exception err, QueueMessageToAddVoice msg)
         {
-            _loggerWrapper.Logger.LogError(err, "CreateOrConcatVoiceFunction.FailResponse. id = {}, voice = {}, message = {}", 
+            _loggerWrapper.Logger.LogError(err, "CreateOrConcatVoiceFunction.FailResponse. id = {}, voice = {}, message = {}",
                 msg.ChatId, msg.FileName, err.Message);
             await _client.Client.SendTextMessageAsync(
                 msg.ChatId,
                 err.Message);
         }
 
-        private TryAsync<QueueMessageToAddVoice> Parse(string rawMsg) => async () => 
+        private TryAsync<QueueMessageToAddVoice> Parse(string rawMsg) => async () =>
         {
             var msg = JsonConvert.DeserializeObject<QueueMessageToAddVoice>(rawMsg);
             _currentMessage = msg;
@@ -100,7 +108,7 @@ namespace GCH.TelegramTriggerFunction
             }
             return msg;
         };
-        
+
 
         private TryAsync<Stream> GetVoiceToAdd(QueueMessageToAddVoice msg) => async () =>
         {
@@ -120,7 +128,7 @@ namespace GCH.TelegramTriggerFunction
             memStr.Position = 0;
             return memStr;
         };
-        
+
 
         private TryAsync<TimeSpan> AddVoice(QueueMessageToAddVoice msg, Stream voiceToAdd) => async () =>
         {
@@ -145,7 +153,7 @@ namespace GCH.TelegramTriggerFunction
                         $"and you try to add {msg.Duration:mm\\:ss\\:ff} which is longer than {Constants.MaxDuration:mm\\:ss\\:ff}"));
                 }
 
-                using var firstStream = new MemoryStream(); 
+                using var firstStream = new MemoryStream();
                 await blobInstance.DownloadToAsync(firstStream);
                 firstStream.Position = 0;
                 using var result = await _oggReader.Concat(firstStream, voiceToAdd);
@@ -159,9 +167,9 @@ namespace GCH.TelegramTriggerFunction
             }
             await blobInstance.SetMetadataAsync(properties.Metadata);
 
-            _loggerWrapper.Logger.LogInformation("Voice was processed. Id {}, Voice {}, duration {}", 
+            _loggerWrapper.Logger.LogInformation("Voice was processed. Id {}, Voice {}, duration {}",
                 msg.ChatId, msg.FileName, sumDuration);
-            
+
             return sumDuration;
         };
     }

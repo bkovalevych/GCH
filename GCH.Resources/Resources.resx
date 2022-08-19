@@ -148,7 +148,7 @@
     <value>Choose settings to change</value>
   </data>
   <data name="VoiceCaption" xml:space="preserve">
-    <value>♂RIGHT♂ Voice</value>
+    <value>♂RIGHT♂ Voice by @GachiBillieVoice_bot</value>
   </data>
   <data name="FileWasNotFound" xml:space="preserve">
     <value>File was not found</value>
@@ -158,5 +158,8 @@
   </data>
   <data name="StateAlertMessage" xml:space="preserve">
     <value>From {0} to {1} mems</value>
+  </data>
+  <data name="AfterVoiceAddedMessage" xml:space="preserve">
+    <value>Voice added. The duration is about {0:mm\:ss\:ff}. Max duration is {1:mm\:ss\:ff}</value>
   </data>
 </root>

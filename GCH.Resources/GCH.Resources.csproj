@@ -26,5 +26,11 @@
 		    <_Parameter1>GCH.Core</_Parameter1>
 	    </AssemblyAttribute>
     </ItemGroup>
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>GCH.TelegramTriggerFunction</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
 
 </Project>
