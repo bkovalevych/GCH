@@ -1,4 +1,6 @@
-﻿using Azure.Storage.Blobs.Models;
+﻿using Azure;
+using Azure.Messaging.EventGrid;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
 using GCH.Core.Interfaces.BlobContainers;
 using GCH.Core.Interfaces.FfmpegHelpers;
@@ -9,6 +11,7 @@ using GCH.Core.TelegramLogic.Handlers.Basic;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
 using LanguageExt;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Text;
@@ -20,22 +23,25 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
     {
         private readonly IOggReaderService _oggReaderService;
         private readonly IUserSettingsTable _settingsTable;
-        private readonly QueueClient _queueClient;
         private readonly IVoicesContainer _voicesContainer;
         private readonly LoggerWrapperService _loggerWrapper;
+        private readonly EventGridPublisherClient _publisher;
 
         private ILogger Logger { get => _loggerWrapper.Logger; }
 
-        public AddPreloadedVoice(IWrappedTelegramClient client, QueueClient queueClient,
+        public AddPreloadedVoice(IWrappedTelegramClient client,
             IUserSettingsTable settingsTable, IVoicesContainer voicesContainer,
             IOggReaderService oggReaderService,
+            IConfiguration configuration,
             LoggerWrapperService loggerWrapper) : base(client)
         {
             _oggReaderService = oggReaderService;
             _settingsTable = settingsTable;
-            _queueClient = queueClient;
             _voicesContainer = voicesContainer;
             _loggerWrapper = loggerWrapper;
+            _publisher = new EventGridPublisherClient(
+                new Uri(configuration["EventGridEndpoint"]),
+                new AzureKeyCredential(configuration["EventGridCreds"]));
         }
 
         public override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
@@ -68,8 +74,8 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
                 ChatState = ChatVoiceHelpers.GetState(upd.CallbackQuery.Message.ReplyMarkup.InlineKeyboard),
                 Duration = duration
             };
-            await _queueClient.SendMessageAsync(Convert.ToBase64String(
-                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(msg))));
+            var eventInstance = new EventGridEvent("voices", "added", "v1", msg);
+            await _publisher.SendEventAsync(eventInstance);
             return Unit.Default;
         };
 
