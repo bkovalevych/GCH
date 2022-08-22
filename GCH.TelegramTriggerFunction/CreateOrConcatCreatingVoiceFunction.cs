@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure.Messaging.EventGrid;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using GCH.Core.Interfaces.Sources;
@@ -12,6 +13,7 @@ using GCH.Infrastructure.OggReader;
 using LanguageExt;
 using LanguageExt.Common;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -46,7 +48,7 @@ namespace GCH.TelegramTriggerFunction
 
         [FunctionName("CreateOrConcatCreatingVoiceFunction")]
         public async Task Run(
-            [QueueTrigger(queueName: "voices", Connection = "BlobConnectionString")] string rawMsg,
+            [EventGridTrigger] EventGridEvent gridEvent,
             [Blob(
             blobPath: "voices",
             access: FileAccess.ReadWrite,
@@ -60,8 +62,8 @@ namespace GCH.TelegramTriggerFunction
             _loggerWrapper.Logger = logger;
             _blobVoicesContainerClient = blobVoicesContainerClient;
             _blobCreatedContainerClient = blobCreatedContainerClient;
-
-            await (from msg in Parse(rawMsg)
+            
+            await (from msg in Parse(gridEvent.Data.ToString())
                    from voiceUrl in GetVoiceToAdd(msg)
                    from duration in AddVoice(msg, voiceUrl)
                    select (msg, duration))
