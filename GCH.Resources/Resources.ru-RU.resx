@@ -162,4 +162,10 @@
   <data name="AfterVoiceAddedMessage" xml:space="preserve">
     <value>Голос добавлен. Продолжительность примерно {0:mm\:ss\:ff}. Максимум {1:mm\:ss\:ff}. Путен хйло</value>
   </data>
+  <data name="VoiceAddedAlert" xml:space="preserve">
+    <value>Голос {0} был добавлен. Это займет некоторое время для обработки.</value>
+  </data>
+  <data name="CancelAlert" xml:space="preserve">
+    <value>Создание голоса отменено.</value>
+  </data>
 </root>

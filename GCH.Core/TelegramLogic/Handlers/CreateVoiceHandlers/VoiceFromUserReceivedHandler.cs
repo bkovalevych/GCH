@@ -1,49 +1,54 @@
-﻿using GCH.Core.Interfaces.Tables;
+﻿using Azure;
+using Azure.Messaging.EventGrid;
+using Azure.Storage.Queues;
+using GCH.Core.Interfaces.Tables;
+using GCH.Core.Models;
 using GCH.Core.TelegramLogic.Handlers.Basic;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
-using Telegram.Bot.Types.Enums;
-using Telegram.Bot;
-using GCH.Core.Models;
-using Azure.Storage.Queues;
-using System.Text;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using System.Text;
+using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 
 namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
 {
     public class VoiceFromUserReceivedHandler : AbstractTelegramHandler
     {
-        private readonly QueueClient _queueClient;
-        private readonly IUserSettingsTable _settingsTable;
+        private readonly EventGridPublisherClient _publisher;
 
         public VoiceFromUserReceivedHandler(
             IWrappedTelegramClient client,
-            QueueClient queueClient,
-            IUserSettingsTable userSettingsTable) : base(client)
+            IConfiguration configuration,
+            IUserSettingsTable userSettingsTable)
+            : base(client, userSettingsTable)
         {
-            _queueClient = queueClient;
-            _settingsTable = userSettingsTable;
+            _publisher = new EventGridPublisherClient(
+                new Uri(configuration["EventGridEndpoint"]),
+                new AzureKeyCredential(configuration["EventGridCreds"]));
         }
 
-        public override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
+        protected override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             var upd = notification.Update;
             if (upd.Message.Voice.Duration > Constants.MaxDuration.TotalSeconds)
             {
                 await ClientWrapper.Client.SendTextMessageAsync(
                     upd.Message.Chat.Id,
-                    @$"Voice too long. Bigger than {Constants.MaxDuration:mm\:ss\:ff}");
+                    @$"Voice too long. Bigger than {Constants.MaxDuration:mm\:ss\:ff}",
+                    cancellationToken: cancellationToken);
                 return;
             }
-            var settings = await _settingsTable.GetByChatId(upd.Message.Chat.Id);
-            var fileName = settings.LastVoiceId;
+
+            var fileName = UserSettings.LastVoiceId;
             if (string.IsNullOrEmpty(fileName))
             {
                 fileName = Guid.NewGuid().ToString();
-                settings.LastVoiceId = fileName;
-                await _settingsTable.SetSettings(settings);
+                UserSettings.LastVoiceId = fileName;
+                await UserSettingsTable.SetSettings(UserSettings);
             }
-            
+
             var msg = new QueueMessageToAddVoice()
             {
                 ChatId = upd.Message.Chat.Id,
@@ -52,12 +57,16 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
                 ChatState = new Dictionary<string, string>(),
                 Duration = TimeSpan.FromSeconds(upd.Message.Voice.Duration)
             };
-            await _queueClient.SendMessageAsync(Convert.ToBase64String(
-                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(msg))), 
-                cancellationToken);
+            
+            var eventInstance = new EventGridEvent("voices", "added", "v1", msg);
+            await _publisher.SendEventAsync(eventInstance);
+
+            await ClientWrapper.Client.SendTextMessageAsync(upd.Message.Chat.Id,
+                string.Format(Resources.Resources.VoiceAddedAlert, "user Voice"),
+                cancellationToken: cancellationToken);
         }
 
-        public override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
+        protected override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             return notification.Update.Type == UpdateType.Message
                  && notification.Update.Message.Type == MessageType.Voice;

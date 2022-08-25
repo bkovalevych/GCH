@@ -47,7 +47,7 @@ namespace GCH.Infrastructure.OggReader
                 await firstCall;
                 await secondCall;
                 await FFMpegArguments.FromConcatInput(tempFiles)
-                    .OutputToPipe(new StreamPipeSink(memoryStream), args => args.ForceFormat("ogg"))
+                    .OutputToPipe(new StreamPipeSink(memoryStream), args => args.ForceFormat("opus"))
                     .ProcessAsynchronously();
                 memoryStream.Position = 0;
                 _loggerWrapper.Logger.LogInformation("Successful concat, Voice size {}", memoryStream.Length);
@@ -69,7 +69,7 @@ namespace GCH.Infrastructure.OggReader
         {
             var memStr = new MemoryStream();
             await FFMpegArguments.FromPipeInput(new StreamPipeSource(stream))
-                .OutputToPipe(new StreamPipeSink(memStr), args => args.ForceFormat("ogg"))
+                .OutputToPipe(new StreamPipeSink(memStr), args => args.ForceFormat("opus"))
                 .ProcessAsynchronously();
             memStr.Position = 0;
             return memStr;

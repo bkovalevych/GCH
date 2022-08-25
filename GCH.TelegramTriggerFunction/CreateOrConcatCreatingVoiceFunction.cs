@@ -163,7 +163,8 @@ namespace GCH.TelegramTriggerFunction
             }
             else
             {
-                await blobInstance.UploadAsync(voiceToAdd);
+                var output = await _oggReader.ProcessVoiceMem(voiceToAdd);
+                await blobInstance.UploadAsync(output);
                 properties = await blobInstance.GetPropertiesAsync();
                 properties.Metadata["Duration"] = sumDuration.ToString();
             }
