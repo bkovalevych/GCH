@@ -21,7 +21,7 @@ namespace GCH.Infrastructure.Voices
             var items = new List<VoiceLabel>();
             await foreach (var blobPage in voiceLabels)
             {
-                foreach(var blob in blobPage.Values)
+                foreach(var blob in blobPage.Values.OrderBy(it => it.Id))
                 {
                     items.Add(blob);
                 }
