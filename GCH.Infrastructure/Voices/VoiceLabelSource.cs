@@ -17,7 +17,8 @@ namespace GCH.Infrastructure.Voices
 
         public async Task<PaginatedList<VoiceLabel>> LoadAsync(int offset = 0, int count = Constants.DefaultPageSize)
         {
-            var voiceLabels = _tableClient.QueryAsync<VoiceLabelTableEntity>($"Id gt {offset}").AsPages(pageSizeHint: count);
+            var voiceLabels = _tableClient.QueryAsync<VoiceLabelTableEntity>(it => it.Id > offset && it.Id <= offset + count)
+                .AsPages(pageSizeHint: count);
             var items = new List<VoiceLabel>();
             await foreach (var blobPage in voiceLabels)
             {
@@ -27,7 +28,7 @@ namespace GCH.Infrastructure.Voices
                 }
                 break;
             }
-            var canLoadNext = await _tableClient.QueryAsync<VoiceLabelTableEntity>($"Id gt {offset + count}", 1)
+            var canLoadNext = await _tableClient.QueryAsync<VoiceLabelTableEntity>(it => it.Id > offset + count && it.Id <= offset + 2 * count, 1)
                 .GetAsyncEnumerator().MoveNextAsync();
 
             return new PaginatedList<VoiceLabel>()
