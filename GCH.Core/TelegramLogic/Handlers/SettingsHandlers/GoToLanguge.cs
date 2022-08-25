@@ -11,32 +11,27 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
 {
     public class GoToLanguge : AbstractTelegramHandler
     {
-        private readonly IUserSettingsTable _settingsTable;
-
-        public GoToLanguge(IWrappedTelegramClient client, IUserSettingsTable settingsTable) : base(client)
+        public GoToLanguge(IWrappedTelegramClient client, IUserSettingsTable settingsTable) : base(client, settingsTable)
         {
-            _settingsTable = settingsTable;
         }
 
-        public override async Task HandleThen(TelegramUpdateNotification notification, 
+        protected override async Task HandleThen(TelegramUpdateNotification notification, 
             CancellationToken cancellationToken)
         {
             var upd = notification.Update;
-            var settings = await _settingsTable.GetByChatId(upd.CallbackQuery.Message.Chat.Id);
-            Resources.Resources.Culture = new CultureInfo(settings.Language);
             var markup = new InlineKeyboardMarkup(new InlineKeyboardButton[][]
             {
                 new InlineKeyboardButton[]
                 {
-                    new InlineKeyboardButton("en" == settings.Language? $"en ({Resources.Resources.Selected})": "en-US")
+                    new InlineKeyboardButton("en" == UserSettings.Language? $"en ({Resources.Resources.Selected})": "en-US")
                     {
                         CallbackData = Constants.SettingsButtons.LanguageEn
                     },
-                    new InlineKeyboardButton("ua" == settings.Language? $"ua ({Resources.Resources.Selected})": "uk-UA")
+                    new InlineKeyboardButton("ua" == UserSettings.Language? $"ua ({Resources.Resources.Selected})": "uk-UA")
                     {
                         CallbackData = Constants.SettingsButtons.LanguageUa
                     },
-                    new InlineKeyboardButton("ru" == settings.Language? $"ru ({Resources.Resources.Selected})": "ru-RU")
+                    new InlineKeyboardButton("ru" == UserSettings.Language? $"ru ({Resources.Resources.Selected})": "ru-RU")
                     {
                         CallbackData = Constants.SettingsButtons.LanguageRu
                     }
@@ -58,7 +53,7 @@ namespace GCH.Core.TelegramLogic.Handlers.SettingsHandlers
                 cancellationToken: cancellationToken);
         }
 
-        public override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
+        protected override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             return notification.Update.Type == UpdateType.CallbackQuery
                 && notification.Update.CallbackQuery.Data == Constants.SettingsButtons.Language;

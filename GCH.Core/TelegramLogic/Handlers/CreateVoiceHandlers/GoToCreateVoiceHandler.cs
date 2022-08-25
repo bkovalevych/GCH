@@ -4,7 +4,6 @@ using GCH.Core.Interfaces.Tables;
 using GCH.Core.TelegramLogic.Handlers.Basic;
 using GCH.Core.TelegramLogic.Interfaces;
 using GCH.Core.TelegramLogic.TelegramUpdate;
-using System.Globalization;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -15,31 +14,28 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
     {
         private readonly IUserVoicesContainer _userVoiceContainer;
         private readonly IVoiceLabelSource _voiceSource;
-        private readonly IUserSettingsTable _userSettingsTable;
 
-        public GoToCreateVoiceHandler(IWrappedTelegramClient client, 
+        public GoToCreateVoiceHandler(IWrappedTelegramClient client,
             IUserVoicesContainer userVoiceContainer,
-            IVoiceLabelSource voiceSource, IUserSettingsTable userSettingsTable) : base(client)
+            IVoiceLabelSource voiceSource, IUserSettingsTable userSettingsTable)
+            : base(client, userSettingsTable)
         {
             _userVoiceContainer = userVoiceContainer;
             _voiceSource = voiceSource;
-            _userSettingsTable = userSettingsTable;
         }
 
-        public override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
+        protected override async Task HandleThen(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             var upd = notification.Update;
-            var settings = await _userSettingsTable.GetByChatId(upd.Message.Chat.Id);
-            Resources.Resources.Culture = new CultureInfo(settings.Language);
             var pagedResult = await _voiceSource.LoadAsync();
             var buttons = ChatVoiceHelpers.AddFooterButtons(pagedResult, "");
-            if (!string.IsNullOrEmpty(settings.LastVoiceId))
+            if (!string.IsNullOrEmpty(UserSettings.LastVoiceId))
             {
-                await _userVoiceContainer.BlobContainer.DeleteBlobIfExistsAsync(settings.LastVoiceId + ".ogg", 
+                await _userVoiceContainer.BlobContainer.DeleteBlobIfExistsAsync(UserSettings.LastVoiceId + ".ogg",
                     cancellationToken: cancellationToken);
             }
-            settings.LastVoiceId = "";
-            await _userSettingsTable.SetSettings(settings);
+            UserSettings.LastVoiceId = "";
+            await UserSettingsTable.SetSettings(UserSettings);
 
             var markup = new InlineKeyboardMarkup(buttons);
 
@@ -50,7 +46,7 @@ namespace GCH.Core.TelegramLogic.Handlers.CreateVoiceHandlers
                 cancellationToken: cancellationToken);
         }
 
-        public override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
+        protected override bool When(TelegramUpdateNotification notification, CancellationToken cancellationToken)
         {
             return notification.Update.Type == UpdateType.Message
                 && notification.Update.Message.Type == MessageType.Text

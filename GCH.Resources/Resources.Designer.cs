@@ -88,6 +88,15 @@ namespace GCH.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Voice creation was cancelled..
+        /// </summary>
+        internal static string CancelAlert {
+            get {
+                return ResourceManager.GetString("CancelAlert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Choose settings to change.
         /// </summary>
         internal static string ChooseSettingsToChange {
@@ -183,6 +192,15 @@ namespace GCH.Resources {
         internal static string StateAlertMessage {
             get {
                 return ResourceManager.GetString("StateAlertMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voice {0} was added. It may takes some time..
+        /// </summary>
+        internal static string VoiceAddedAlert {
+            get {
+                return ResourceManager.GetString("VoiceAddedAlert", resourceCulture);
             }
         }
         

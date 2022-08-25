@@ -162,4 +162,10 @@
   <data name="AfterVoiceAddedMessage" xml:space="preserve">
     <value>Voice added. The duration is about {0:mm\:ss\:ff}. Max duration is {1:mm\:ss\:ff}</value>
   </data>
+  <data name="VoiceAddedAlert" xml:space="preserve">
+    <value>Voice {0} was added. It may take some time to process.</value>
+  </data>
+  <data name="CancelAlert" xml:space="preserve">
+    <value>Voice creation was cancelled.</value>
+  </data>
 </root>
